@@ -1,6 +1,5 @@
-var names = ["🇺🇸USD ↔ 🇯🇵JPY", "🇿🇦ZAR ↔ 🇯🇵JPY", '🇯🇵JPY ↔ 🇨🇳CNY', "HNS ↔ ₿BTC"];
+var names = ["🇺🇸USD ↔ 🇯🇵JPY", "🇿🇦ZAR ↔ 🇯🇵JPY", '🇯🇵JPY ↔ 🇨🇳CNY', '₿BTC ↔ 🇯🇵JPY', 'HNS ↔ ₿BTC'];
 var rates = {};
-var namebaseAuth = ""
 
 $ui.render({
   props: { title: "" },
@@ -74,10 +73,16 @@ function updateList() {
       "value-label": {
         text: 0.1
       }
+    },
+    {
+      "name-label": { text: names[4] },
+      "value-label": {
+        text: 0.1
+      }
     }
   ];
 
-  let symbols = ['USDJPY', 'ZARJPY', 'JPYCNY', 'HSNBTC'];
+  let symbols = ['USDJPY', 'ZARJPY', 'JPYCNY', 'BTCJPY', 'HSNBTC'];
 
   for (let i = 0; i < symbols.length; i++) {
     if (rates[symbols[i]]) {
@@ -96,13 +101,13 @@ async function fetch(pulled) {
       url: "https://info.fcd.japannetbank.co.jp/csv/rate.php?" + Date.now()
     }),
     $http.get({
-      url: "https://www.namebase.io/api/v0/ticker/day?symbol=HNSBTC",
-      header: {
-        'Authorization': namebaseAuth
-      }
+      url: "https://www.namebase.io/api/v0/ticker/day?symbol=HNSBTC"
     }),
     $http.get({
       url: 'https://srh.bankofchina.com/search/whpj/search_cn.jsp?erectDate=&nothing=&pjname=%E6%97%A5%E5%85%83&head=head_620.js&bottom=bottom_591.js&page=1'
+    }),
+    $http.get({
+      url: 'https://api.bitflyer.com/v1/ticker'
     })
   ]);
 
@@ -123,6 +128,12 @@ async function fetch(pulled) {
     console.log('got response from boc site', result[2].data.len)
     let jpyRates = processBocHTML(result[2].data)
     rates['JPYCNY'] = jpyRates;
+  }
+
+  if (result[3].response.statusCode < 300) {
+    console.log('got response from boc site', result[2].data.len)
+    let btcPrice = result[3].data.ltp
+    rates['BTCJPY'] = [btcPrice, ''];
   }
 
   $ui.loading(false);
