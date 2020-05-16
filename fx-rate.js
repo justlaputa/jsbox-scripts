@@ -117,9 +117,17 @@ async function fetch(pulled) {
     rates = Object.assign({}, fxRates);
   }
 
+  if (result[3].response.statusCode < 300) {
+    console.log('got response from boc site', result[2].data.len)
+    let btcPrice = result[3].data.ltp
+    rates['BTCJPY'] = [btcPrice, ''];
+  }
+
   if (result[1].response.statusCode < 300) {
     console.log('got result from namebase', result[1].data);
-    rates["HSNBTC"] = [result[1].data.closePrice, `${result[1].data.priceChangePercent}%`];
+    let btcPrice = result[3].data.ltp;
+    let hsnBTC = result[1].data.closePrice;
+    rates["HSNBTC"] = [hsnBTC, hsnBTC*btcPrice];
   } else {
     console.error(result[1].response);
   }
@@ -130,11 +138,7 @@ async function fetch(pulled) {
     rates['JPYCNY'] = jpyRates;
   }
 
-  if (result[3].response.statusCode < 300) {
-    console.log('got response from boc site', result[2].data.len)
-    let btcPrice = result[3].data.ltp
-    rates['BTCJPY'] = [btcPrice, ''];
-  }
+  
 
   $ui.loading(false);
   $("list").endRefreshing();
