@@ -127,7 +127,8 @@ async function fetch(pulled) {
     console.log('got result from namebase', result[1].data);
     let btcPrice = result[3].data.ltp;
     let hsnBTC = result[1].data.closePrice;
-    rates["HSNBTC"] = [hsnBTC, hsnBTC*btcPrice];
+    let hsnJPY = Number.parseFloat(hsnBTC*btcPrice).toFixed(2)
+    rates["HSNBTC"] = [hsnBTC, hsnJPY];
   } else {
     console.error(result[1].response);
   }
