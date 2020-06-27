@@ -1,4 +1,4 @@
-var names = ["🇺🇸USD ↔ 🇯🇵JPY", "🇿🇦ZAR ↔ 🇯🇵JPY", '🇯🇵JPY ↔ 🇨🇳CNY', '₿BTC ↔ 🇯🇵JPY', 'HNS ↔ ₿BTC'];
+var names = ["🇺🇸USD ↔ 🇯🇵JPY", "🇿🇦ZAR ↔ 🇯🇵JPY", '🇯🇵JPY ↔ 🇨🇳CNY', '₿BTC ↔ 🇯🇵JPY', 'HNS ↔ ₿BTC', 'iPad Pro'];
 var rates = {};
 
 $ui.render({
@@ -79,10 +79,16 @@ function updateList() {
       "value-label": {
         text: 0.1
       }
+    },
+    {
+      "name-label": { text: names[5] },
+      "value-label": {
+        text: 0.1
+      }
     }
   ];
 
-  let symbols = ['USDJPY', 'ZARJPY', 'JPYCNY', 'BTCJPY', 'HSNBTC'];
+  let symbols = ['USDJPY', 'ZARJPY', 'JPYCNY', 'BTCJPY', 'HSNBTC', 'iPad Pro'];
 
   for (let i = 0; i < symbols.length; i++) {
     if (rates[symbols[i]]) {
@@ -108,6 +114,9 @@ async function fetch(pulled) {
     }),
     $http.get({
       url: 'https://api.bitflyer.com/v1/ticker'
+    }),
+    $http.get({
+      url: 'https://www.apple.com/jp/shop/refurbished/ipad/12-9%E3%82%A4%E3%83%B3%E3%83%81ipad-pro'
     })
   ]);
 
@@ -118,7 +127,7 @@ async function fetch(pulled) {
   }
 
   if (result[3].response.statusCode < 300) {
-    console.log('got response from boc site', result[2].data.len)
+    console.log('got response from boc site', result[2].data.length)
     let btcPrice = result[3].data.ltp
     rates['BTCJPY'] = [btcPrice, ''];
   }
@@ -134,12 +143,16 @@ async function fetch(pulled) {
   }
 
   if (result[2].response.statusCode < 300) {
-    console.log('got response from boc site', result[2].data.len)
+    console.log('got response from boc site', result[2].data.length)
     let jpyRates = processBocHTML(result[2].data)
     rates['JPYCNY'] = jpyRates;
   }
 
-  
+  if (result[4].response.statusCode < 300) {
+    console.log('got response from apple', result[4].data.length)
+    let ipadRates = processiPadHTML(result[4].data)
+    rates['iPad Pro'] = ipadRates;
+  }
 
   $ui.loading(false);
   $("list").endRefreshing();
@@ -182,6 +195,44 @@ function processBocHTML(data) {
   }
 
   return result;
+}
+
+function processiPadHTML(data) {
+  let doc = $xml.parse({
+    string: data,
+    mode: 'html'
+  });
+
+  let firstPrice = "";
+
+  doc.rootElement.children({
+    xPath: '//div[@class="refurbished-category-grid-no-js"]/ul/li'
+  }).forEach(elem => {
+      if (firstPrice != "") return;
+      
+      let url = elem.firstChild({
+        xPath: './/h3/a/@href'
+      });
+      console.log('url: ', url);
+
+      let price = elem.firstChild({
+        xPath: './/div[@class="as-price-currentprice as-producttile-currentprice"]/text()'
+      });
+      
+      if (url && url.string && url.string.includes('129-inch')) {
+        if (price) {
+          firstPrice = price.string.trim();
+          console.log('set price: ', firstPrice);
+        }
+      }
+
+    });
+
+  console.log('first element price:', firstPrice);
+
+  let result = [firstPrice, 0]
+
+  return result
 }
 
 fetch(false).then(
