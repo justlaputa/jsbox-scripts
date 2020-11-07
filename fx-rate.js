@@ -1,4 +1,4 @@
-var names = ["🇺🇸USD ↔ 🇯🇵JPY", "🇿🇦ZAR ↔ 🇯🇵JPY", '🇯🇵JPY ↔ 🇨🇳CNY', '₿BTC ↔ 🇯🇵JPY', 'HNS ↔ ₿BTC'];
+var names = ["🇺🇸USD ↔ 🇯🇵JPY", "🇿🇦ZAR ↔ 🇯🇵JPY", '🇯🇵JPY ↔ 🇨🇳CNY', '₿BTC ↔ 🇯🇵JPY', 'iPad Pro'];
 var rates = {};
 
 $ui.render({
@@ -82,7 +82,7 @@ function updateList() {
     }
   ];
 
-  let symbols = ['USDJPY', 'ZARJPY', 'JPYCNY', 'BTCJPY', 'HSNBTC'];
+  let symbols = ['USDJPY', 'ZARJPY', 'JPYCNY', 'BTCJPY', 'iPad'];
 
   for (let i = 0; i < symbols.length; i++) {
     if (rates[symbols[i]]) {
@@ -101,7 +101,7 @@ async function fetch(pulled) {
       url: "https://info.fcd.japannetbank.co.jp/csv/rate.php?" + Date.now()
     }),
     $http.get({
-      url: "https://www.namebase.io/api/v0/ticker/day?symbol=HNSBTC"
+      url: "https://www.apple.com/jp/shop/buyability-message?parts.0=FTEL2J%2FA"
     }),
     $http.get({
       url: 'https://srh.bankofchina.com/search/whpj/search_cn.jsp?erectDate=&nothing=&pjname=%E6%97%A5%E5%85%83&head=head_620.js&bottom=bottom_591.js&page=1'
@@ -124,11 +124,11 @@ async function fetch(pulled) {
   }
 
   if (result[1].response.statusCode < 300) {
-    console.log('got result from namebase', result[1].data);
-    let btcPrice = result[3].data.ltp;
-    let hsnBTC = result[1].data.closePrice;
-    let hsnJPY = Number.parseFloat(hsnBTC*btcPrice).toFixed(2)
-    rates["HSNBTC"] = [hsnBTC, hsnJPY];
+    console.log('got result from apple refurbish site', result[1].data);
+    let data = result[1].data;
+    let availability =  getKeyOrDefault(data, 'body.content.buyabilityMessage.sth.FTEL2J/A.isBuyable', 'unknown')
+
+    rates["iPad"] = [availability, '-'];
   } else {
     console.error(result[1].response);
   }
@@ -139,7 +139,20 @@ async function fetch(pulled) {
     rates['JPYCNY'] = jpyRates;
   }
 
-  
+  function getKeyOrDefault(obj, key, defaultValue) {
+    let keyComponents = key.split('.');
+    let tempObj = obj;
+    for (const c of keyComponents) {
+      console.log(tempObj, c)
+      if (tempObj[c] != undefined) {
+        tempObj = tempObj[c];
+      } else {
+        console.log('key: [%s] not exist', c);
+        return defaultValue;
+      }
+    }
+    return tempObj;
+  }
 
   $ui.loading(false);
   $("list").endRefreshing();
