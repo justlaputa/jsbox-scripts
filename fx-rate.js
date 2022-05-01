@@ -1,4 +1,4 @@
-var names = ["🇺🇸USD ↔ 🇯🇵JPY", "🇿🇦ZAR ↔ 🇯🇵JPY", '🇯🇵JPY ↔ 🇨🇳CNY', '₿BTC ↔ 🇯🇵JPY', 'iPad Pro'];
+var names = ["🇺🇸USD ↔ 🇯🇵JPY", "🇿🇦ZAR ↔ 🇯🇵JPY", '🇯🇵JPY ↔ 🇨🇳CNY', '₿BTC ↔ 🇯🇵JPY'];
 var rates = {};
 
 $ui.render({
@@ -74,15 +74,9 @@ function updateList() {
         text: 0.1
       }
     },
-    {
-      "name-label": { text: names[4] },
-      "value-label": {
-        text: 0.1
-      }
-    }
   ];
 
-  let symbols = ['USDJPY', 'ZARJPY', 'JPYCNY', 'BTCJPY', 'iPad'];
+  let symbols = ['USDJPY', 'ZARJPY', 'JPYCNY', 'BTCJPY'];
 
   for (let i = 0; i < symbols.length; i++) {
     if (rates[symbols[i]]) {
@@ -98,10 +92,7 @@ async function fetch(pulled) {
   $ui.loading(!pulled);
   var result = await Promise.all([
     $http.get({
-      url: "https://info.fcd.japannetbank.co.jp/csv/rate.php?" + Date.now()
-    }),
-    $http.get({
-      url: "https://www.apple.com/jp/shop/buyability-message?parts.0=FTEL2J%2FA"
+      url: "https://info.fcd.paypay-bank.co.jp/csv/rate.php?" + Date.now()
     }),
     $http.get({
       url: 'https://srh.bankofchina.com/search/whpj/search_cn.jsp?erectDate=&nothing=&pjname=%E6%97%A5%E5%85%83&head=head_620.js&bottom=bottom_591.js&page=1'
@@ -117,26 +108,16 @@ async function fetch(pulled) {
     rates = Object.assign({}, fxRates);
   }
 
-  if (result[3].response.statusCode < 300) {
-    console.log('got response from boc site', result[2].data.len)
-    let btcPrice = result[3].data.ltp
-    rates['BTCJPY'] = [btcPrice, ''];
-  }
-
   if (result[1].response.statusCode < 300) {
-    console.log('got result from apple refurbish site', result[1].data);
-    let data = result[1].data;
-    let availability =  getKeyOrDefault(data, 'body.content.buyabilityMessage.sth.FTEL2J/A.isBuyable', 'unknown')
-
-    rates["iPad"] = [availability, '-'];
-  } else {
-    console.error(result[1].response);
+    console.log('got response from boc site', result[1].data.len)
+    let jpyRates = processBocHTML(result[1].data)
+    rates['JPYCNY'] = jpyRates;
   }
 
   if (result[2].response.statusCode < 300) {
-    console.log('got response from boc site', result[2].data.len)
-    let jpyRates = processBocHTML(result[2].data)
-    rates['JPYCNY'] = jpyRates;
+    console.log('got response from bitflyer site', result[2].data.len)
+    let btcPrice = result[2].data.ltp
+    rates['BTCJPY'] = [btcPrice, ''];
   }
 
   function getKeyOrDefault(obj, key, defaultValue) {
@@ -187,11 +168,11 @@ function processBocHTML(data) {
 
   let result = [0, 0]
 
-  if (buy && buy.node) {
-    result[0] = buy.node;
+  if (buy && buy.string) {
+    result[0] = buy.string.trim();
   }
-  if (middle && middle.node) {
-    result[1] = middle.node;
+  if (middle && middle.string) {
+    result[1] = middle.string.trim();
   }
 
   return result;
